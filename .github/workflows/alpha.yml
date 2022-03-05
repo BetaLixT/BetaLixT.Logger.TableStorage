@@ -1,0 +1,28 @@
+name: .NET
+
+on:
+  release:
+    types: [prereleased]
+
+jobs:
+  publish:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Get the version
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Pack
+      run: dotnet pack -c Release -p:PackageVersion="${{ steps.get_version.outputs.VERSION }}"
+    - name: Push
+      env:
+          NUGET_KEY : ${{secrets.NUGET_KEY}}
+      run: dotnet nuget push  src/BetaLixT.Logger.TableStorage/bin/Release/BetaLixT.Logger.TableStorage.${{ steps.get_version.outputs.VERSION }}.nupkg --api-key $NUGET_KEY  --source https://api.nuget.org/v3/index.json
